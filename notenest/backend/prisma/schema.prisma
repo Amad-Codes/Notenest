@@ -1,0 +1,82 @@
+// Prisma schema for NoteNest
+// Provider is SQLite for a zero-config local setup. For production, switch
+// the provider to "postgresql" and point DATABASE_URL at a real Postgres
+// instance (see README.md -> Deployment for the exact steps).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A registered user of the application.
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  notes Note[]
+
+  @@map("users")
+}
+
+// A single note belonging to a user.
+model Note {
+  id         String    @id @default(uuid())
+  title      String
+  content    String    @default("")
+  color      String    @default("default") // maps to a palette token in the UI
+  isPinned   Boolean   @default(false)
+  isArchived Boolean   @default(false)
+  isTrashed  Boolean   @default(false)
+  reminderAt DateTime? // optional date/time reminder shown as a badge in the UI
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  tags        Tag[]        @relation("NoteToTag")
+  attachments Attachment[]
+
+  @@index([authorId])
+  @@map("notes")
+}
+
+// A tag/label a user can attach to many notes (many-to-many).
+model Tag {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+
+  notes Note[] @relation("NoteToTag")
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+// A file (image, PDF, document) attached to a note. Stored either on
+// Cloudinary or on local disk, depending on backend configuration —
+// `storage` + `publicId` record which, so deletion knows how to clean up.
+model Attachment {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileType  String // MIME type
+  fileSize  Int // bytes
+  url       String // public URL the frontend renders/downloads from
+  publicId  String? // Cloudinary public_id, null when stored locally
+  storage   String   @default("local") // "local" | "cloudinary"
+  createdAt DateTime @default(now())
+
+  noteId String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@map("attachments")
+}
