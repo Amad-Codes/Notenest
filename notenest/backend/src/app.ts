@@ -13,23 +13,19 @@ import aiRoutes from "./modules/ai/ai.routes";
 import { UPLOADS_DIR } from "./modules/uploads/upload.service";
 
 const app = express();
-const allowedOrigins = (env.CLIENT_URL || "")
-  .split(",")
-  .map((url) => url.trim());
-
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (
-        allowedOrigins.length === 0 ||
-        allowedOrigins.includes(origin) ||
-        allowedOrigins.includes("*")
-      ) {
+
+      const isAllowedVercel = /\.vercel\.app$/.test(origin);
+      const isLocalhost = origin.includes("localhost");
+
+      if (isAllowedVercel || isLocalhost) {
         return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
       }
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
