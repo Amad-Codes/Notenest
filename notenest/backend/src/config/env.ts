@@ -17,7 +17,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string().min(10, "JWT_SECRET should be at least 10 characters"),
   JWT_EXPIRES_IN: z.string().default("7d"),
-  CLIENT_URL: z.string().default("http://localhost:5173"),
+  CLIENT_URL: z.string().optional(),
 
   // Optional: file attachments fall back to local disk storage when these
   // are not set. All three must be set for Cloudinary to activate.
